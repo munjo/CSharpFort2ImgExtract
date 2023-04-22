@@ -121,7 +121,7 @@ namespace CSharpFort2ImgExtract
             this.L_openPal.Name = "L_openPal";
             this.L_openPal.Size = new System.Drawing.Size(489, 23);
             this.L_openPal.TabIndex = 7;
-            this.L_openPal.Text = "불러온 팔레트 없음(기본 팔레트 사용)";
+            this.L_openPal.Text = "불러온 팔레트 없음(.img 파일 전용)";
             this.L_openPal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // LB_imgList

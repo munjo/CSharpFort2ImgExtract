@@ -13,28 +13,19 @@ namespace CSharpFort2ImgExtract
 
         static public Bitmap Fort2Color256ImgDraw(Fort2Img fort2Img, Color[] palette, int layer)
         {
-            Bitmap bitmap = new Bitmap(fort2Img.Width, fort2Img.Height);
+            Bitmap bitmap = null;
 
-            if (fort2Img.Type == Fort2ImgType.BitmapImage)
+            if (fort2Img.OutMem[layer] != null)
             {
-                if(layer == 1 && fort2Img.OutMem1 != null)
+                bitmap = new Bitmap(fort2Img.Width, fort2Img.Height);
+
+                if (fort2Img.Type == Fort2ImgType.BitmapImage)
                 {
-                    DrawColor256Bitmap(fort2Img.OutMem1, bitmap, palette);
+                    DrawColor256Bitmap(fort2Img.OutMem[layer], bitmap, palette);
                 }
-                else
+                else if (fort2Img.Type == Fort2ImgType.TransparentValueImage)
                 {
-                    DrawColor256Bitmap(fort2Img.OutMem0, bitmap, palette);
-                }
-            }
-            else if (fort2Img.Type == Fort2ImgType.TransparentValueImage)
-            {
-                if (layer == 1 && fort2Img.OutMem1 != null)
-                {
-                    DrawColor256BitmapWithTransparency(fort2Img.OutMem1, bitmap, palette);
-                }
-                else
-                {
-                    DrawColor256BitmapWithTransparency(fort2Img.OutMem0, bitmap, palette);
+                    DrawColor256BitmapWithTransparency(fort2Img.OutMem[layer], bitmap, palette);
                 }
             }
             return bitmap;
@@ -42,28 +33,19 @@ namespace CSharpFort2ImgExtract
 
         static public Bitmap Fort2ImgDraw(Fort2Img fort2Img, Color[] palette, int layer)
         {
-            Bitmap bitmap = new Bitmap(fort2Img.Width, fort2Img.Height);
+            Bitmap bitmap = null;
 
-            if (fort2Img.Type == Fort2ImgType.BitmapImage)
+            if (fort2Img.OutMem[layer] != null)
             {
-                if (layer == 1 && fort2Img.OutMem1 != null)
+                bitmap = new Bitmap(fort2Img.Width, fort2Img.Height);
+
+                if (fort2Img.Type == Fort2ImgType.BitmapImage)
                 {
-                    DrawBitmap(fort2Img.OutMem1, bitmap, palette);
+                    DrawBitmap(fort2Img.OutMem[layer], bitmap, palette);
                 }
-                else
+                else if (fort2Img.Type == Fort2ImgType.TransparentValueImage)
                 {
-                    DrawBitmap(fort2Img.OutMem0, bitmap, palette);
-                }
-            }
-            else if (fort2Img.Type == Fort2ImgType.TransparentValueImage)
-            {
-                if (layer == 1 && fort2Img.OutMem1 != null)
-                {
-                    DrawBitmapWithTransparency(fort2Img.OutMem1, bitmap, palette);
-                }
-                else
-                {
-                    DrawBitmapWithTransparency(fort2Img.OutMem0, bitmap, palette);
+                    DrawBitmapWithTransparency(fort2Img.OutMem[layer], bitmap, palette);
                 }
             }
             return bitmap;
