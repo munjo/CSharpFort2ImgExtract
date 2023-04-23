@@ -40,6 +40,7 @@ namespace CSharpFort2ImgExtract
                 }
             }
         }
+
         public string PalateName {
             get => palateName;
             private set
@@ -375,63 +376,26 @@ namespace CSharpFort2ImgExtract
 
             if (result == DialogResult.OK)
             {
-                string folderName = Path.GetFileNameWithoutExtension(ImgName);
-                if (saveForm.PalNameAdd
-                    && PalateName != string.Empty
-                    && IsHighColorImage == false)
+                SaveOption saveOption = saveForm.Option;
+
+                // 팔레트이름 추가 옵션이 꺼져있거나
+                // 불러온 팔레트 파일이 없거나
+                // 하이칼라 이미지라면
+                // 폴더명에 팔레트이름 붙이지 않음
+                if (!saveForm.Option.PalNameAdd
+                    || PalateName == string.Empty
+                    || IsHighColorImage)
                 {
-                    folderName += string.Format("(pal-{0})", Path.GetFileNameWithoutExtension(PalateName));
+                    saveOption.PalNameAdd = false;
                 }
-                string path = Path.Combine(saveForm.SelectedPath, folderName);
 
                 try
                 {
-
-                    DirectoryInfo di = new DirectoryInfo(path);
-
-                    if (di.Exists == false)
-                    {
-                        di.Create();
-                    }
-
-                    for (int a = 0; a < fort2Imgs.Count; a++)
-                    {
-                        if (saveForm.GetItemChecked(a))
-                        {
-                            var img = fort2Imgs[a];
-
-                            for (int b = 0; b < img.Images.Length; b++)
-                            {
-                                if (img.Images[b] == null)
-                                {
-                                    continue;
-                                }
-
-                                string fileName = Path.GetFileNameWithoutExtension(ImgName) + string.Format("{0:D4}", img.Num);
-                                if (img.Images[1] != null)
-                                {
-                                    fileName += string.Format("-{0}", b);
-                                }
-                                fileName += ".png";
-
-                                if (File.Exists(fileName))
-                                {
-                                    if (saveForm.DuplicateFileMode == DuplicateFileOption.Overwrite)
-                                    {
-                                        img.Images[b].Save(Path.Combine(path, fileName), ImageFormat.Png);
-                                    }
-                                }
-                                else
-                                {
-                                    img.Images[b].Save(Path.Combine(path, fileName), ImageFormat.Png);
-                                }
-
-                            }
-                        }
-                    }
+                    ImageSave.Save(fort2Imgs ,saveOption, ImgName, PalateName);
                 }
-                catch
+                catch (Exception exc)
                 {
+                    Console.WriteLine(exc);
                     MessageBox.Show("이미지 파일을 저장하는데 실패했습니다.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }

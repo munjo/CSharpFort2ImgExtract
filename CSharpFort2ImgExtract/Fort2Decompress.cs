@@ -211,7 +211,6 @@ namespace CSharpFort2ImgExtract
             ushort uVar6;
             int uVar7;
             int iVar8;
-            int iVar9;
             ushort uVar10;
             short sVar11;
 
@@ -228,8 +227,8 @@ namespace CSharpFort2ImgExtract
                 }
                 return;
             }
-            sVar11 = 0;
 
+            sVar11 = 0;
             while (sVar11 < sVar3)
             {
                 uVar1 = data.uShort0;
@@ -254,23 +253,19 @@ namespace CSharpFort2ImgExtract
                     sVar4 = (short)(uVar10 - 3);
                 }
                 FUN_00402c00(data, sVar4);
-                iVar8 = sVar11;
+                data.test5[sVar11] = (byte)uVar10;
                 sVar11++;
-                data.test5[iVar8] = (byte)uVar10;
                 if (sVar11 == sVar2)
                 {
                     uVar5 = FUN_00402cb0(data, 2);
                     sVar4 = (short)(uVar5 - 1);
-                    if (-1 < sVar4)
+
+                    iVar8 = sVar4 + 1;
+                    while (iVar8 != 0)
                     {
-                        iVar8 = sVar4 + 1;
-                        do
-                        {
-                            iVar9 = sVar11;
-                            sVar11++;
-                            iVar8--;
-                            data.test5[iVar9] = 0;
-                        } while (iVar8 != 0);
+                        data.test5[sVar11] = 0;
+                        sVar11++;
+                        iVar8--;
                     }
                 }
             }

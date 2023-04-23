@@ -14,54 +14,34 @@ namespace CSharpFort2ImgExtract
 {
     public partial class SaveForm : Form
     {
-        public string SelectedPath
+        private string SelectedPath
         {
-            get => selectedPath;
-            private set
+            get => option.SelectedPath;
+            set
             {
-                selectedPath = value;
+                option.SelectedPath = value;
                 L_savePath.Text = value;
             } 
         }
 
-        private string selectedPath;
-
-        public bool PalNameAdd
+        public SaveOption Option
         {
-            get => CB_palNameAdd.Checked;
+            get => option;
         }
 
-        public DuplicateFileOption DuplicateFileMode
-        {
-            get
-            {
-                if (RB_skip.Checked)
-                {
-                    return DuplicateFileOption.Skip;
-                }
-                else
-                {
-                    return DuplicateFileOption.Overwrite;
-                }
-            }
-        }
-
-        public bool GetItemChecked(int value)
-        {
-            return CLB_imageList.GetItemChecked(value);
-        }
+        SaveOption option;
 
         public SaveForm()
         {
             InitializeComponent();
+
+            option = new SaveOption();
 
             SelectedPath = Directory.GetCurrentDirectory();
         }
 
         public DialogResult ShowDialog(List<Fort2Img> fort2Imgs)
         {
-            CLB_imageList.Items.Clear();
-
             for (int i = 0; i < fort2Imgs.Count; i++)
             {
                 CLB_imageList.Items.Add(fort2Imgs[i].Num, true);
@@ -72,6 +52,40 @@ namespace CSharpFort2ImgExtract
             return dialogResult;
         }
 
+        private void SaveForm_Load(object sender, EventArgs e)
+        {
+            var items = CLB_imageList.CheckedItems;
+            B_save.Enabled = (0 < items.Count);
+            CB_selectAll.Checked = items.Count == CLB_imageList.Items.Count;
+        }
+
+        private void SaveForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            List<int> saveIndex = new List<int>();
+
+            for (int a = 0; a < CLB_imageList.Items.Count; a++)
+            {
+                if (CLB_imageList.GetItemChecked(a))
+                {
+                    saveIndex.Add(a);
+                }
+            }
+            option.SaveIndex = saveIndex;
+
+            CLB_imageList.Items.Clear();
+
+            if (RB_skip.Checked)
+            {
+                option.DuplicateFileMode = DuplicateFileOption.Skip;
+            }
+            else
+            {
+                option.DuplicateFileMode = DuplicateFileOption.Overwrite;
+            }
+
+            option.PalNameAdd = CB_palNameAdd.Checked;
+        }
+
         private void B_savePath_Click(object sender, EventArgs e)
         {
             var result = folderBrowserDialog1.ShowDialog();
@@ -80,13 +94,6 @@ namespace CSharpFort2ImgExtract
             {
                 SelectedPath = folderBrowserDialog1.SelectedPath;
             }
-        }
-
-        private void SaveForm_Load(object sender, EventArgs e)
-        {
-            var items = CLB_imageList.CheckedItems;
-            B_save.Enabled = (0 < items.Count);
-            CB_selectAll.Checked = items.Count == CLB_imageList.Items.Count;
         }
 
         private void B_close_Click(object sender, EventArgs e)

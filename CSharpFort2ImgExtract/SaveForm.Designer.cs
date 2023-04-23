@@ -29,6 +29,7 @@ namespace CSharpFort2ImgExtract
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SaveForm));
             this.CB_palNameAdd = new System.Windows.Forms.CheckBox();
             this.B_save = new System.Windows.Forms.Button();
             this.B_close = new System.Windows.Forms.Button();
@@ -192,13 +193,14 @@ namespace CSharpFort2ImgExtract
             this.Controls.Add(this.B_savePath);
             this.Controls.Add(this.B_close);
             this.Controls.Add(this.CB_palNameAdd);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(372, 376);
             this.Name = "SaveForm";
-            this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.Text = "저장";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SaveForm_FormClosing);
             this.Load += new System.EventHandler(this.SaveForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
