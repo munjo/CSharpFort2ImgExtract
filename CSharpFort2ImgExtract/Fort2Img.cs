@@ -14,12 +14,9 @@ namespace CSharpFort2ImgExtract
         public Fort2ImgType Type { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
-        public short XOffset0 { get; set; }
-        public short YOffset0 { get; set; }
+        public short[] XOffset { get; set; }
+        public short[] YOffset { get; set; }
         public byte[][] OutMem { get; set; }
-
-        public short XOffset1 { get; set; }
-        public short YOffset1 { get; set; }
 
         public Bitmap[] Images { get; set; }
     }

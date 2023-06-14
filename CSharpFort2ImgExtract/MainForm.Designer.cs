@@ -45,6 +45,11 @@ namespace CSharpFort2ImgExtract
             this.label4 = new System.Windows.Forms.Label();
             this.TLP_imgLayer = new System.Windows.Forms.TableLayoutPanel();
             this.P_img = new System.Windows.Forms.Panel();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.PB_img)).BeginInit();
             this.TLP_imgLayer.SuspendLayout();
             this.P_img.SuspendLayout();
@@ -130,9 +135,9 @@ namespace CSharpFort2ImgExtract
             | System.Windows.Forms.AnchorStyles.Left)));
             this.LB_imgList.FormattingEnabled = true;
             this.LB_imgList.ItemHeight = 12;
-            this.LB_imgList.Location = new System.Drawing.Point(12, 73);
+            this.LB_imgList.Location = new System.Drawing.Point(12, 97);
             this.LB_imgList.Name = "LB_imgList";
-            this.LB_imgList.Size = new System.Drawing.Size(105, 328);
+            this.LB_imgList.Size = new System.Drawing.Size(105, 304);
             this.LB_imgList.TabIndex = 8;
             this.LB_imgList.SelectedIndexChanged += new System.EventHandler(this.LB_imgList_SelectedIndexChanged);
             // 
@@ -205,17 +210,68 @@ namespace CSharpFort2ImgExtract
             | System.Windows.Forms.AnchorStyles.Right)));
             this.P_img.AutoScroll = true;
             this.P_img.Controls.Add(this.PB_img);
-            this.P_img.Location = new System.Drawing.Point(123, 73);
+            this.P_img.Location = new System.Drawing.Point(123, 98);
             this.P_img.Name = "P_img";
-            this.P_img.Size = new System.Drawing.Size(489, 327);
+            this.P_img.Size = new System.Drawing.Size(489, 302);
             this.P_img.TabIndex = 14;
             this.P_img.MouseDown += new System.Windows.Forms.MouseEventHandler(this.PB_img_MouseDown);
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(173, 74);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.ReadOnly = true;
+            this.textBox1.Size = new System.Drawing.Size(40, 21);
+            this.textBox1.TabIndex = 15;
+            this.textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
+            // textBox2
+            // 
+            this.textBox2.Location = new System.Drawing.Point(269, 74);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.ReadOnly = true;
+            this.textBox2.Size = new System.Drawing.Size(40, 21);
+            this.textBox2.TabIndex = 16;
+            this.textBox2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
+            // label1
+            // 
+            this.label1.Location = new System.Drawing.Point(123, 73);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(44, 22);
+            this.label1.TabIndex = 17;
+            this.label1.Text = "Xoffset";
+            this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // label2
+            // 
+            this.label2.Location = new System.Drawing.Point(219, 73);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(44, 22);
+            this.label2.TabIndex = 18;
+            this.label2.Text = "Yoffset";
+            this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(12, 75);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(76, 16);
+            this.checkBox1.TabIndex = 19;
+            this.checkBox1.Text = "전체 선택";
+            this.checkBox1.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(624, 441);
+            this.Controls.Add(this.checkBox1);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.textBox2);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.P_img);
             this.Controls.Add(this.TLP_imgLayer);
             this.Controls.Add(this.L_imgSize);
@@ -234,6 +290,7 @@ namespace CSharpFort2ImgExtract
             this.P_img.ResumeLayout(false);
             this.P_img.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -254,6 +311,11 @@ namespace CSharpFort2ImgExtract
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TableLayoutPanel TLP_imgLayer;
         private System.Windows.Forms.Panel P_img;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 

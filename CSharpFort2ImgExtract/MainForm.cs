@@ -70,6 +70,8 @@ namespace CSharpFort2ImgExtract
 
         private void B_openImg_Click(object sender, EventArgs e)
         {
+            OFD_openImg.FileName = imgName;
+
             DialogResult result = OFD_openImg.ShowDialog();
             if (result == DialogResult.OK)
             {
@@ -173,6 +175,8 @@ namespace CSharpFort2ImgExtract
                         Fort2Img fort2Img = new Fort2Img();
 
                         fort2Img.Num = a + 1;
+                        fort2Img.XOffset = new short[2];
+                        fort2Img.YOffset = new short[2];
                         fort2Img.Images = new Bitmap[2];
                         fort2Img.OutMem = new byte[2][];
 
@@ -191,8 +195,8 @@ namespace CSharpFort2ImgExtract
                         }
                         fort2Img.Width = sr.ReadInt32();
                         fort2Img.Height = sr.ReadInt32();
-                        fort2Img.XOffset0 = sr.ReadInt16();
-                        fort2Img.YOffset0 = sr.ReadInt16();
+                        fort2Img.XOffset[0] = sr.ReadInt16();
+                        fort2Img.YOffset[0] = sr.ReadInt16();
                         outSize0 = sr.ReadInt32();
                         if (IsHighColorImage)
                         {
@@ -215,8 +219,8 @@ namespace CSharpFort2ImgExtract
                         }
                         if (outSize1 != 0)
                         {
-                            fort2Img.XOffset1 = sr.ReadInt16();
-                            fort2Img.YOffset1 = sr.ReadInt16();
+                            fort2Img.XOffset[1] = sr.ReadInt16();
+                            fort2Img.YOffset[1] = sr.ReadInt16();
                             dataSize = sr.ReadInt32();
                             if (dataSize > fs.Length)
                             {
@@ -349,11 +353,17 @@ namespace CSharpFort2ImgExtract
                 L_imgSize.Text = string.Format("{0}×{1} px", 
                     img.Images[layer]?.Width ?? 0,
                     img.Images[layer]?.Height ?? 0);
+
+                textBox1.Text = img.XOffset[layer].ToString();
+                textBox2.Text = img.YOffset[layer].ToString();
             }
             else
             {
                 PB_img.Image = null;
                 L_imgSize.Text = "0×0 px";
+
+                textBox1.Text = "";
+                textBox2.Text = "";
             }
         }
 

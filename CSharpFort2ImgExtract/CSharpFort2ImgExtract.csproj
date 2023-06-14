@@ -64,6 +64,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Fort2Compress.cs" />
+    <Compile Include="DirectBitmap.cs" />
     <Compile Include="DuplicateFileOption.cs" />
     <Compile Include="DecompressData.cs" />
     <Compile Include="DefaultPalette.cs" />
