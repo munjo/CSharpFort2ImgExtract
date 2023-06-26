@@ -27,13 +27,13 @@ namespace CSharpFort2ImgExtract
         /// 뒤로 이동할 값
         /// </summary>
         public ushort[] backLocationHighTree = new ushort[256];
-        public ushort[] lowTreeValue0 = new ushort[2038]; // 불확실
+        public ushort[] lowTreeValue0 = new ushort[1024]; // 불확실
         /// <summary>
         /// ushort[4096]
         /// InMem에 들어가는 데이터가 있는 트리 배열
         /// </summary>
         public ushort[] dataHighTree = new ushort[4096];
-        public ushort[] lowTreeValue1 = new ushort[2042]; // 불확실
+        public ushort[] lowTreeValue1 = new ushort[1024]; // 불확실
         /// <summary>
         /// byte[510]
         ///  데이터가 있는 트리 사이즈
@@ -44,12 +44,14 @@ namespace CSharpFort2ImgExtract
         /// 뒤로 이동할 값의 트리 사이즈
         /// </summary>
         public byte[] backLocationTreeSizeTable = new byte[19];
-
-        public byte[] inMem = new byte[8192];
+        /// <summary>
+        /// byte[8192]
+        /// </summary>
+        public byte[] dataBuffer = new byte[8192];
 
         /// <summary>
         /// DAT_0044f82c
         /// </summary>
-        public uint DAT_0044f82c = 0;
+        public uint headPosition = 0;
     }
 }

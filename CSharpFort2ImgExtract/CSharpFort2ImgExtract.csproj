@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>program.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\program.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -64,30 +64,33 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compress\HuffmanTree.cs" />
+    <Compile Include="Compress\LZSS.cs" />
+    <Compile Include="Compress\Node.cs" />
     <Compile Include="Fort2Compress.cs" />
     <Compile Include="DirectBitmap.cs" />
     <Compile Include="DuplicateFileOption.cs" />
     <Compile Include="DecompressData.cs" />
     <Compile Include="DefaultPalette.cs" />
     <Compile Include="ImageSave.cs" />
-    <Compile Include="SaveForm.cs">
+    <Compile Include="Form\SaveForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SaveForm.Designer.cs">
+    <Compile Include="Form\SaveForm.Designer.cs">
       <DependentUpon>SaveForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Fort2Decompress.cs" />
     <Compile Include="Fort2ImgConversion.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="Form\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
+    <Compile Include="Form\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Fort2Img.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="MainForm.resx">
+    <EmbeddedResource Include="Form\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -100,7 +103,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="SaveForm.resx">
+    <EmbeddedResource Include="Form\SaveForm.resx">
       <DependentUpon>SaveForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
@@ -120,7 +123,7 @@
     <None Include="Resources\imgBackground.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="program.ico" />
+    <Content Include="Resources\program.ico" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">

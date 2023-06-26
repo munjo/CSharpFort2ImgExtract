@@ -8,16 +8,9 @@ namespace CSharpFort2ImgExtract
 {
     public class Fort2Decompress
     {
-
-        //=====================================테스트
-        private static int[] test0;
-        private static int[] test1;
-        private static int testValue;
-        private static int testCount;
-        //===========================================
         public static void DecompressStart(byte[] outMem, byte[] readMem, int readSize, int outSize)
         {
-            int inMemMax;
+            int dataBufferSize;
             DecompressData data = new DecompressData();
 
             data.readMem = readMem;
@@ -30,14 +23,14 @@ namespace CSharpFort2ImgExtract
             InitDictionary(data);
             while (data.outSize != 0)
             {
-                inMemMax = data.outSize;
-                if (8192 < inMemMax)
+                dataBufferSize = data.outSize;
+                if (8192 < dataBufferSize)
                 {
-                    inMemMax = 8192;
+                    dataBufferSize = 8192;
                 }
-                FUN_00402ec0(data, inMemMax, data.inMem);
-                OutMemoryCopy(data, data.inMem, inMemMax);
-                data.outSize -= inMemMax;
+                FUN_00402ec0(data, dataBufferSize, data.dataBuffer);
+                OutMemoryCopy(data, data.dataBuffer, dataBufferSize);
+                data.outSize -= dataBufferSize;
             }
             return;
         }
@@ -56,17 +49,11 @@ namespace CSharpFort2ImgExtract
             data.flags = 0;
             data.windowOffset = 0;
 
-            //=====================================테스트
-            test0 = new int[510];
-            test1 = Enumerable.Repeat(-1, 510).ToArray();
-            testCount = 0;
-            //===========================================
-
             return;
         }
 
         // 00402EC0
-        static void FUN_00402ec0(DecompressData data, int outSize, byte[] inMem)
+        static void FUN_00402ec0(DecompressData data, int outSize, byte[] dataBuffer)
         {
             uint uVar2;
             uint uVar3;
@@ -77,8 +64,8 @@ namespace CSharpFort2ImgExtract
 
             while (-1 < data.windowOffset)
             {
-                inMem[readCount] = inMem[data.DAT_0044f82c];
-                data.DAT_0044f82c = ++data.DAT_0044f82c % 8192;
+                dataBuffer[readCount] = dataBuffer[data.headPosition];
+                data.headPosition = ++data.headPosition % 8192;
                 readCount++;
                 if (readCount == outSize)
                 {
@@ -93,7 +80,7 @@ namespace CSharpFort2ImgExtract
                     uVar2 = FUN_00404860(data);
                     if (255 < uVar2)
                         break;
-                    inMem[readCount] = (byte)uVar2;
+                    dataBuffer[readCount] = (byte)uVar2;
                     readCount++;
                     if (readCount == outSize)
                     {
@@ -103,12 +90,12 @@ namespace CSharpFort2ImgExtract
                 // 사전에 있는 값이 기본 정의된 값(255)보다 클때
                 data.windowOffset = (short)(uVar2 - 253);
                 uVar3 = FUN_00404930(data);
-                data.DAT_0044f82c = (readCount - 1 - uVar3) % 8192;
+                data.headPosition = (uint)(readCount - 1 - uVar3) % 8192;
                 data.windowOffset--;
                 while (-1 < data.windowOffset)
                 {
-                    inMem[readCount] = inMem[data.DAT_0044f82c];
-                    data.DAT_0044f82c = ++data.DAT_0044f82c % 8192;
+                    dataBuffer[readCount] = dataBuffer[data.headPosition];
+                    data.headPosition = ++data.headPosition % 8192;
                     readCount++;
                     if (readCount == outSize)
                     {
@@ -156,48 +143,7 @@ namespace CSharpFort2ImgExtract
                 local_4 >>= 1;
             }
 
-            test0[uVar4]++;
-            testValue = uVar1 >> (16 - data.dataTreeSizeTable[uVar4]);
-            if (test1[uVar4] != testValue)
-            {
-                if(test1[uVar4] != -1)
-                {
-                    Console.WriteLine("test1[{0}] changed", uVar4);
-                }
-                
-                test1[uVar4] = testValue;
-            }
-
             CurrentBitProgress(data, data.dataTreeSizeTable[uVar4]);
-            //=====================================테스트
-            if (data.flags == 0)
-            {
-                Console.WriteLine("---------------- flags == 0 ----------------");
-                //Console.WriteLine("------------------- test0-{0} -----------------", testCount);
-                //for (int i = 0; i < 510; i++)
-                //{
-                //    Console.WriteLine("{0}", test0[i]);
-                //}
-                //Console.WriteLine("------------------- test1 ------------------");
-                //for (int i = 0; i < 510; i++)
-                //{
-                //    if (test1[i] == -1)
-                //    {
-                //        Console.WriteLine("X");
-                //    }
-                //    else
-                //    {
-                //        Console.WriteLine("{0}", Convert.ToString(test1[i], 2));
-                //    }
-                //}
-                Console.WriteLine("--------------------------------------------");
-
-                test0 = new int[510];
-                test1 = Enumerable.Repeat(-1, 510).ToArray();
-
-                testCount++;
-            }
-            //===========================================
 
             return uVar4;
         }
