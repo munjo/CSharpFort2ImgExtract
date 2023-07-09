@@ -11,9 +11,7 @@ namespace CSharpFort2ImgExtract
     {
         public static void CompressStart(byte[] data)
         {
-            List<LZSSValue> compressDatas = new List<LZSSValue>();
-
-            LZSS.Compress(data, compressDatas);
+            List<LZSSValue> compressDatas = LZSS.Compress(data);
         }
     }
 }

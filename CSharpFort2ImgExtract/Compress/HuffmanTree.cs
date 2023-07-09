@@ -10,24 +10,55 @@ namespace CSharpFort2ImgExtract.Compress
 
     class HuffmanTree
     {
-        private List<Node> nodes = new List<Node>();
-        public Node Root { get; set; }
-        public Dictionary<int, int> Frequencies = new Dictionary<int, int>();
-
-        public void Build(int[] source)
+        public Node DataTree { get; set; }
+        public Node BackPosTree { get; set; }
+        
+        /// <summary>
+        /// 항목의 개수를 센 사전을 만들고 트리 만들기
+        /// </summary>
+        /// <param name="source"></param>
+        public void Build(List<LZSSValue> source)
         {
-            for (int i = 0; i < source.Length; i++)
+            Dictionary<int, int> dataFrequencies = new Dictionary<int, int>();
+            Dictionary<int, int> backPosFrequencies = new Dictionary<int, int>();
+
+            for (int i = 0; i < source.Count; i++)
             {
-                if (!Frequencies.ContainsKey(source[i]))
+                if (!dataFrequencies.ContainsKey(source[i].DataValue))
                 {
-                    Frequencies.Add(source[i], 0);
+                    dataFrequencies.Add(source[i].DataValue, 0);
                 }
 
-                Frequencies[source[i]]++;
+                dataFrequencies[source[i].DataValue]++;
+
+                if (source[i].DataValue > 255)
+                {
+                    int backValue = NumberBits(source[i].BackPos);
+
+                    if (!backPosFrequencies.ContainsKey(backValue))
+                    {
+                        backPosFrequencies.Add(backValue, 0);
+                    }
+
+                    backPosFrequencies[backValue]++;
+                }
             }
 
+            this.DataTree = TreeBuild(dataFrequencies);
+            this.BackPosTree = TreeBuild(backPosFrequencies);
+        }
+
+        /// <summary>
+        /// 개수가 입력된 사전을 토대로 트리 만들기
+        /// </summary>
+        /// <param name="frequencies"></param>
+        private Node TreeBuild(Dictionary<int, int> frequencies)
+        {
+            List<Node> nodes = new List<Node>();
+            Node treeNodes = null;
+
             // 노드 추가
-            foreach (KeyValuePair<int, int> symbol in Frequencies)
+            foreach (KeyValuePair<int, int> symbol in frequencies)
             {
                 nodes.Add(new Node(symbol.Key, symbol.Value));
             }
@@ -35,7 +66,7 @@ namespace CSharpFort2ImgExtract.Compress
             // 노드 재정렬
             while (nodes.Count > 1)
             {
-                List<Node> orderedNodes = nodes.OrderBy(node => node.freq).ToList();
+                List<Node> orderedNodes = nodes.OrderBy(node => node.source).OrderBy(node => node.freq).ToList();
 
                 if (orderedNodes.Count >= 2)
                 {
@@ -50,20 +81,36 @@ namespace CSharpFort2ImgExtract.Compress
                     nodes.Add(parent);
                 }
 
-                this.Root = nodes.FirstOrDefault();
-
+                treeNodes = nodes.FirstOrDefault();
             }
 
+            return treeNodes;
         }
 
-        public BitArray Encode(ushort[] source)
+        public BitArray Encode(List<LZSSValue> source)
         {
             List<bool> encodedSource = new List<bool>();
 
-            for (int i = 0; i < source.Length; i++)
+            for (int i = 0; i < source.Count; i++)
             {
-                List<bool> encodedSymbol = this.Root.Traverse(source[i], new List<bool>());
+                List<bool> encodedSymbol = Traverse(this.DataTree, source[i].DataValue, new List<bool>());
                 encodedSource.AddRange(encodedSymbol);
+
+                if(source[i].DataValue > 255)
+                {
+                    if(this.BackPosTree == null)
+                    {
+                        continue;
+                    }
+
+                    int backValue = NumberBits(source[i].BackPos);
+
+                    encodedSymbol = Traverse(this.BackPosTree, backValue, new List<bool>());
+                    encodedSource.AddRange(encodedSymbol);
+
+                    List<bool> releaseBits = ReleaseBits(source[i].BackPos, backValue);
+                    encodedSource.AddRange(releaseBits);
+                }
             }
 
             BitArray bits = new BitArray(encodedSource.ToArray());
@@ -71,5 +118,81 @@ namespace CSharpFort2ImgExtract.Compress
             return bits;
         }
 
+        private int NumberBits(int source)
+        {
+            int backValue = 0;
+            if (source != backValue)
+            {
+                for (int j = 1, bit = 1; j <= 13; j++, bit *= 2)
+                {
+                    if (source / bit == 1)
+                    {
+                        backValue = j;
+                    }
+                }
+            }
+
+            return backValue;
+        }
+
+        private List<bool> ReleaseBits(int source, int NumberBit)
+        {
+            BitArray bitArray = new BitArray(new int[] { source });
+
+            List<bool> bitList = new List<bool>();
+
+            for(int i = NumberBit; i > 1; i--)
+            {
+                bitList.Add(bitArray[i - 2]);
+            }
+
+            return bitList;
+        }
+
+        private List<bool> Traverse(Node node, int symbol, List<bool> data)
+        {
+            // Leaf
+            if (node.rightNode == null && node.leftNode == null)
+            {
+                if (symbol.Equals(node.source))
+                {
+                    return data;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                List<bool> left = null;
+                List<bool> right = null;
+
+                if (node.leftNode != null)
+                {
+                    List<bool> leftPath = new List<bool>();
+                    leftPath.AddRange(data);
+                    leftPath.Add(false);
+                    left = Traverse(node.leftNode, symbol, leftPath);
+                }
+
+                if (node.rightNode != null)
+                {
+                    List<bool> rightPath = new List<bool>();
+                    rightPath.AddRange(data);
+                    rightPath.Add(true);
+                    right = Traverse(node.rightNode, symbol, rightPath);
+                }
+
+                if (left != null)
+                {
+                    return left;
+                }
+                else
+                {
+                    return right;
+                }
+            }
+        }
     }
 }

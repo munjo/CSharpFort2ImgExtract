@@ -74,13 +74,14 @@ namespace CSharpFort2ImgExtract.Compress
         private const int WindowSize = 8192;
         private const int LookAheadBufferSize = 256;
 
-        public static void Compress(byte[] data, List<LZSSValue> compressDatas)
+        public static List<LZSSValue> Compress(byte[] data)
         {
             int pos;
             int backMatchPos = -1;
             bool match = false;
             int value = 0;
             LZSSValue lzss;
+            List<LZSSValue> compressDatas = new List<LZSSValue>();
 
             for (pos = 0; pos < data.Length; pos++)
             {
@@ -120,6 +121,8 @@ namespace CSharpFort2ImgExtract.Compress
                 lzss = new LZSSValue(value + 253, backMatchPos - 1);
                 compressDatas.Add(lzss);
             }
+
+            return compressDatas;
         }
 
         public static int FindEqualValues(byte[] data, int pos)
@@ -159,8 +162,8 @@ namespace CSharpFort2ImgExtract.Compress
 
     public struct LZSSValue
     {
-        int DataValue;
-        int BackPos;
+        public int DataValue;
+        public int BackPos;
 
         public LZSSValue(int dataValue, int backPos)
         {
