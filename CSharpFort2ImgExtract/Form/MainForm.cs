@@ -313,28 +313,6 @@ namespace CSharpFort2ImgExtract
                     {
                         colorData = sr.ReadBytes(1024);
                         palette = Fort2ImgConversion.GetPaletteColors(colorData);
-
-                        /*
-                         
-                        int dataSize = sr.ReadInt32();
-                        byte[] readMem = sr.ReadBytes(dataSize);
-                        int outSize;
-                        byte[] outMem;
-                        
-                        if (ch == 1)
-                        {
-                            int outSize = 65536;
-                            byte[] outMem = new Byte[outSize];
-                        }
-                        else
-                        {
-                            int outSize = 196608;
-                            byte[] outMem = new Byte[outSize];
-                        }
-
-                        Fort2Decompress.DecompressStart(fort2Img.OutMem, readMem, dataSize, outSize);
-
-                        */
                     }
                     else
                     {
