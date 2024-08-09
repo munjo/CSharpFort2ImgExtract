@@ -15,12 +15,12 @@ namespace CSharpFort2ImgExtract
     public class Fort2Decompress
     {
 
-        ////=====================================테스트
-        //private static int[] test0;
-        //private static int[] test1;
-        //private static int testValue;
-        //private static int testCount;
-        ////===========================================
+        //=====================================테스트
+        private static int[] test0;
+        private static int[] test1;
+        private static int testValue;
+        private static int testCount;
+        //===========================================
         public static void DecompressStart(byte[] outMem, byte[] readMem, int readSize, int outSize)
         {
             int dataBufferSize;
@@ -62,11 +62,11 @@ namespace CSharpFort2ImgExtract
             data.flags = 0;
             data.windowOffset = 0;
 
-            ////=====================================테스트
-            //test0 = new int[510];
-            //test1 = Enumerable.Repeat(-1, 510).ToArray();
-            //testCount = 0;
-            ////===========================================
+            //=====================================테스트
+            test0 = new int[510];
+            test1 = Enumerable.Repeat(-1, 510).ToArray();
+            testCount = 0;
+            //===========================================
 
             return;
         }
@@ -162,50 +162,50 @@ namespace CSharpFort2ImgExtract
                 local_4 >>= 1;
             }
 
-            ////=====================================테스트
-            //test0[uVar4]++;
-            //testValue = uVar1 >> (16 - data.dataTreeSizeTable[uVar4]);
-            //if (test1[uVar4] != testValue)
-            //{
-            //    if(test1[uVar4] != -1)
-            //    {
-            //        Console.WriteLine("test1[{0}] changed", uVar4);
-            //    }
-                
-            //    test1[uVar4] = testValue;
-            //}
-            ////===========================================
+            //=====================================테스트
+            test0[uVar4]++;
+            testValue = uVar1 >> (16 - data.dataTreeSizeTable[uVar4]);
+            if (test1[uVar4] != testValue)
+            {
+                if (test1[uVar4] != -1)
+                {
+                    Console.WriteLine("test1[{0}] changed", uVar4);
+                }
+
+                test1[uVar4] = testValue;
+            }
+            //===========================================
 
             CurrentBitProgress(data, data.dataTreeSizeTable[uVar4]);
-            ////=====================================테스트
-            //if (data.flags == 0)
-            //{
-            //    Console.WriteLine("---------------- flags == 0 ----------------");
-            //    //Console.WriteLine("------------------- test0-{0} -----------------", testCount);
-            //    //for (int i = 0; i < 510; i++)
-            //    //{
-            //    //    Console.WriteLine("{0}", test0[i]);
-            //    //}
-            //    //Console.WriteLine("------------------- test1 ------------------");
-            //    //for (int i = 0; i < 510; i++)
-            //    //{
-            //    //    if (test1[i] == -1)
-            //    //    {
-            //    //        Console.WriteLine("X");
-            //    //    }
-            //    //    else
-            //    //    {
-            //    //        Console.WriteLine("{0}", Convert.ToString(test1[i], 2));
-            //    //    }
-            //    //}
-            //    Console.WriteLine("--------------------------------------------");
+            //=====================================테스트
+            if (data.flags == 0)
+            {
+                Console.WriteLine("---------------- flags == 0 ----------------");
+                //Console.WriteLine("------------------- test0-{0} -----------------", testCount);
+                //for (int i = 0; i < 510; i++)
+                //{
+                //    Console.WriteLine("{0}", test0[i]);
+                //}
+                //Console.WriteLine("------------------- test1 ------------------");
+                //for (int i = 0; i < 510; i++)
+                //{
+                //    if (test1[i] == -1)
+                //    {
+                //        Console.WriteLine("X");
+                //    }
+                //    else
+                //    {
+                //        Console.WriteLine("{0}", Convert.ToString(test1[i], 2));
+                //    }
+                //}
+                Console.WriteLine("--------------------------------------------");
 
-            //    test0 = new int[510];
-            //    test1 = Enumerable.Repeat(-1, 510).ToArray();
+                test0 = new int[510];
+                test1 = Enumerable.Repeat(-1, 510).ToArray();
 
-            //    testCount++;
-            //}
-            ////===========================================
+                testCount++;
+            }
+            //===========================================
 
             return uVar4;
         }
