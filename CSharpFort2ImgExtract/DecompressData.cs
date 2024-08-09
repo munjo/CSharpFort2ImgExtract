@@ -27,19 +27,13 @@ namespace CSharpFort2ImgExtract
         /// 뒤로 이동할 값
         /// </summary>
         public ushort[] backLocationHighTree = new ushort[256];
-        /// <summary>
-        /// ushort[1019]
-        /// </summary>
-        public ushort[] lowTreeValue0 = new ushort[1019];
+        public ushort[] lowTreeValue0 = new ushort[1024]; // 불확실
         /// <summary>
         /// ushort[4096]
         /// InMem에 들어가는 데이터가 있는 트리 배열
         /// </summary>
         public ushort[] dataHighTree = new ushort[4096];
-        /// <summary>
-        /// ushort[1021]
-        /// </summary>
-        public ushort[] lowTreeValue1 = new ushort[1021];
+        public ushort[] lowTreeValue1 = new ushort[1024]; // 불확실
         /// <summary>
         /// byte[510]
         ///  데이터가 있는 트리 사이즈

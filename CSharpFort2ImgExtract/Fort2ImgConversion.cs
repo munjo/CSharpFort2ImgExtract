@@ -41,11 +41,11 @@ namespace CSharpFort2ImgExtract
 
                 if (fort2Img.Type == Fort2ImgType.BitmapImage)
                 {
-                    DrawBitmap(fort2Img.OutMem[layer], bitmap);
+                    DrawBitmap(fort2Img.OutMem[layer], bitmap, palette);
                 }
                 else if (fort2Img.Type == Fort2ImgType.TransparentValueImage)
                 {
-                    DrawBitmapWithTransparency(fort2Img.OutMem[layer], bitmap);
+                    DrawBitmapWithTransparency(fort2Img.OutMem[layer], bitmap, palette);
                 }
             }
             return bitmap;
@@ -121,7 +121,7 @@ namespace CSharpFort2ImgExtract
             }
         }
 
-        static private void DrawBitmap(byte[] data, Bitmap bitmap)
+        static private void DrawBitmap(byte[] data, Bitmap bitmap, Color[] palette)
         {
             Point drawPos = new Point();
             for (int a = 0; a < data.Length; a+=2)
@@ -143,7 +143,7 @@ namespace CSharpFort2ImgExtract
             }
         }
 
-        static private void DrawBitmapWithTransparency(byte[] data, Bitmap bitmap)
+        static private void DrawBitmapWithTransparency(byte[] data, Bitmap bitmap, Color[] palette)
         {
             int Startoffset = 0;
             Point drawPos = new Point();
@@ -198,9 +198,9 @@ namespace CSharpFort2ImgExtract
             int green = (value >> 5) & 63;
             int blue = value & 31;
 
-            red = red * 8;
-            green = green * 4;
-            blue = blue * 8;
+            red = red * 255 / 31;
+            green = green * 255 / 63;
+            blue = blue * 255 / 31;
 
             Color result = Color.FromArgb(red, green, blue);
 
