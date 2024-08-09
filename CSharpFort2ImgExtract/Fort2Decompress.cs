@@ -4,10 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/*
+ 압축방식은 deflate 압축방식으로
+ LSZZ 압축으로 한번 압축후
+ 허프만 압축으로 구간마다 한번더 압축한다.
+ */
+
 namespace CSharpFort2ImgExtract
 {
     public class Fort2Decompress
     {
+
+        ////=====================================테스트
+        //private static int[] test0;
+        //private static int[] test1;
+        //private static int testValue;
+        //private static int testCount;
+        ////===========================================
         public static void DecompressStart(byte[] outMem, byte[] readMem, int readSize, int outSize)
         {
             int dataBufferSize;
@@ -48,6 +61,12 @@ namespace CSharpFort2ImgExtract
             CurrentBitProgress(data, 16);
             data.flags = 0;
             data.windowOffset = 0;
+
+            ////=====================================테스트
+            //test0 = new int[510];
+            //test1 = Enumerable.Repeat(-1, 510).ToArray();
+            //testCount = 0;
+            ////===========================================
 
             return;
         }
@@ -143,7 +162,50 @@ namespace CSharpFort2ImgExtract
                 local_4 >>= 1;
             }
 
+            ////=====================================테스트
+            //test0[uVar4]++;
+            //testValue = uVar1 >> (16 - data.dataTreeSizeTable[uVar4]);
+            //if (test1[uVar4] != testValue)
+            //{
+            //    if(test1[uVar4] != -1)
+            //    {
+            //        Console.WriteLine("test1[{0}] changed", uVar4);
+            //    }
+                
+            //    test1[uVar4] = testValue;
+            //}
+            ////===========================================
+
             CurrentBitProgress(data, data.dataTreeSizeTable[uVar4]);
+            ////=====================================테스트
+            //if (data.flags == 0)
+            //{
+            //    Console.WriteLine("---------------- flags == 0 ----------------");
+            //    //Console.WriteLine("------------------- test0-{0} -----------------", testCount);
+            //    //for (int i = 0; i < 510; i++)
+            //    //{
+            //    //    Console.WriteLine("{0}", test0[i]);
+            //    //}
+            //    //Console.WriteLine("------------------- test1 ------------------");
+            //    //for (int i = 0; i < 510; i++)
+            //    //{
+            //    //    if (test1[i] == -1)
+            //    //    {
+            //    //        Console.WriteLine("X");
+            //    //    }
+            //    //    else
+            //    //    {
+            //    //        Console.WriteLine("{0}", Convert.ToString(test1[i], 2));
+            //    //    }
+            //    //}
+            //    Console.WriteLine("--------------------------------------------");
+
+            //    test0 = new int[510];
+            //    test1 = Enumerable.Repeat(-1, 510).ToArray();
+
+            //    testCount++;
+            //}
+            ////===========================================
 
             return uVar4;
         }
@@ -302,29 +364,27 @@ namespace CSharpFort2ImgExtract
         /// </summary>
         /// <param name="data"></param>
         /// <param name="param_2"></param>
-        /// <param name="param_3"></param>
+        /// <param name="TreeSizeTable"></param>
         /// <param name="param_4"></param>
-        /// <param name="param_5"></param>
-        static void FUN_00404a00(DecompressData data, int param_2, byte[] param_3, int param_4, ushort[] param_5)
+        /// <param name="HighTree"></param>
+        static void FUN_00404a00(DecompressData data, int param_2, byte[] TreeSizeTable, int param_4, ushort[] HighTree)
         {
             int a, b;
             ushort usVar1;
-            int iVar1, iVar2, iVar3, iVar4;
-            int conVar1, conVar2;
+            int iVar1, iVar2, iVar3, iVar4, iVar5;
+            int conVar2;
             ushort[] sArray1 = new ushort[17];
             ushort[] sArray2 = new ushort[18];
             // ushort* ptr;
             ushort[] ptrArray;
             ushort ptrPos;
 
-            conVar1 = param_2;
-
             for (a = 1; a < 17; a++) {
                 sArray1[a] = 0;
             }
 
-            for (a = 0; a < conVar1; a++) {
-                sArray1[param_3[a]]++;
+            for (a = 0; a < param_2; a++) {
+                sArray1[TreeSizeTable[a]]++;
             }
 
             sArray2[1] = 0;
@@ -361,13 +421,15 @@ namespace CSharpFort2ImgExtract
                 usVar1 -= (ushort)iVar1;
                 for (a = 0; a < usVar1; a++)
                 {
-                    param_5[iVar1 + a] = 0;
+                    HighTree[iVar1 + a] = 0;
                 }
             }
 
-            for (a = 0; a < conVar1; a++)
+            iVar5 = param_2;
+
+            for (a = 0; a < param_2; a++)
             {
-                iVar1 = param_3[a];
+                iVar1 = TreeSizeTable[a];
                 if (iVar1 != 0)
                 {
                     iVar2 = sArray2[iVar1];
@@ -378,17 +440,17 @@ namespace CSharpFort2ImgExtract
                         // unsafe를 사용하기 싫어서 변수로 구현
                         // ptr = &param_5[iVar2 >> conVar2];
                         ptrPos = (ushort)(iVar2 >> conVar2);
-                        ptrArray = param_5;
+                        ptrArray = HighTree;
                         for (b = iVar1 - param_4; b != 0; b--)
                         {
                             // if(*ptr == 0)
                             if (ptrArray[ptrPos] == 0)
                             {
-                                data.lowTreeValue0[param_2] = 0;
-                                data.lowTreeValue1[param_2] = 0;
-                                // *ptr = (ushort)param_2;
-                                ptrArray[ptrPos] = (ushort)param_2;
-                                param_2++;
+                                data.lowTreeValue0[iVar5] = 0;
+                                data.lowTreeValue1[iVar5] = 0;
+                                // *ptr = (ushort)iVar5;
+                                ptrArray[ptrPos] = (ushort)iVar5;
+                                iVar5++;
                             }
                             if ((1 << (15 - param_4) & iVar2) == 0)
                             {
@@ -412,7 +474,7 @@ namespace CSharpFort2ImgExtract
                         iVar4 = iVar3 - iVar2;
                         for (b = 0; b < iVar4; b++)
                         {
-                            param_5[iVar2 + b] = (ushort)a;
+                            HighTree[iVar2 + b] = (ushort)a;
                         }
                     }
                     sArray2[iVar1] = (ushort)iVar3;
