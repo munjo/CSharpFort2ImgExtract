@@ -210,7 +210,7 @@ namespace CSharpFort2ImgExtract
                         readMem = sr.ReadBytes(dataSize);
                         fort2Img.OutMem[0] = new byte[outSize0];
 
-                        Fort2Decompress.DecompressStart(fort2Img.OutMem[0], readMem, dataSize, outSize0);
+                        Fort2Decompress.StartDecompression(fort2Img.OutMem[0], readMem, dataSize, outSize0);
 
                         outSize1 = sr.ReadInt32();
                         if (IsHighColorImage)
@@ -229,7 +229,7 @@ namespace CSharpFort2ImgExtract
                             readMem = sr.ReadBytes(dataSize);
                             fort2Img.OutMem[1] = new byte[outSize1];
 
-                            Fort2Decompress.DecompressStart(fort2Img.OutMem[1], readMem, dataSize, outSize1);
+                            Fort2Decompress.StartDecompression(fort2Img.OutMem[1], readMem, dataSize, outSize1);
                         }
 
                         fort2Imgs.Add(fort2Img);

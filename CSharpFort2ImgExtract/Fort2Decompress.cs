@@ -14,347 +14,314 @@ namespace CSharpFort2ImgExtract
 {
     public class Fort2Decompress
     {
-
-        //=====================================테스트
-        private static int[] test0;
-        private static int[] test1;
-        private static int testValue;
-        private static int testCount;
-        //===========================================
-        public static void DecompressStart(byte[] outMem, byte[] readMem, int readSize, int outSize)
+        /// <summary>
+        /// DEFLATE 압축 해제 프로세스 시작 메서드
+        /// </summary>
+        /// <param name="outputBuffer">출력 데이터 저장 버퍼</param>
+        /// <param name="compressedDataBuffer">압축된 입력 데이터 버퍼</param>
+        /// <param name="compressedDataLength">압축 데이터 길이</param>
+        /// <param name="decompressedDataLength">출력 데이터 길이</param>
+        public static void StartDecompression(byte[] outputBuffer, byte[] compressedDataBuffer, int compressedDataLength, int decompressedDataLength)
         {
-            int dataBufferSize;
-            DecompressData data = new DecompressData();
+            int decompressionChunkSize;
+            DecompressionContext context = new DecompressionContext();
 
-            data.readMem = readMem;
-            data.outSize = outSize;
-            data.index = 0;
-            data.readSize = readSize;
-            data.outMemWriteOffset = 0;
-            data.outMem = outMem;
-            data.remainReadData = readSize;
-            InitDictionary(data);
-            while (data.outSize != 0)
+            // 컨텍스트 초기화
+            context.compressedData = compressedDataBuffer;
+            context.remainingDecompressedSize = decompressedDataLength;
+            context.currentInputPosition = 0;
+            context.totalCompressedSize = compressedDataLength;
+            context.outMemWriteOffset = 0;
+            context.decompressedOutput = outputBuffer;
+            context.remainReadData = compressedDataLength;
+            InitializeDecompressionContext(context);
+
+            // 청크 단위 압축 해제 처리
+            while (context.remainingDecompressedSize != 0)
             {
-                dataBufferSize = data.outSize;
-                if (8192 < dataBufferSize)
-                {
-                    dataBufferSize = 8192;
-                }
-                FUN_00402ec0(data, dataBufferSize, data.dataBuffer);
-                OutMemoryCopy(data, data.dataBuffer, dataBufferSize);
-                data.outSize -= dataBufferSize;
+                decompressionChunkSize = context.remainingDecompressedSize;
+                decompressionChunkSize = Math.Min(decompressionChunkSize, 8192);
+
+                ProcessDecompressionChunk(context, decompressionChunkSize, context.slidingWindowBuffer);
+                OutMemoryCopy(context, context.slidingWindowBuffer, decompressionChunkSize);
+                context.remainingDecompressedSize -= decompressionChunkSize;
             }
             return;
         }
 
         // 00402EA0
         /// <summary>
-        /// 초기 사전(Dictionary) 생성
+        /// 콘텍스트 초기화
         /// </summary>
-        /// <param name="data"></param>
-        static void InitDictionary(DecompressData data)
+        /// <param name="context"></param>
+        static void InitializeDecompressionContext(DecompressionContext context)
         {
-            data.currentBitValue = 0;
-            data.nextBitValue = 0;
-            data.remainingBits = 0;
-            CurrentBitProgress(data, 16);
-            data.flags = 0;
-            data.windowOffset = 0;
-
-            //=====================================테스트
-            test0 = new int[510];
-            test1 = Enumerable.Repeat(-1, 510).ToArray();
-            testCount = 0;
-            //===========================================
+            context.currentBitBuffer = 0;
+            context.nextBitValue = 0;
+            context.availableBits = 0;
+            FillBitBuffer(context, 16);
+            context.remainingTreeFlags = 0;
+            context.windowOffset = 0;
 
             return;
         }
 
         // 00402EC0
-        static void FUN_00402ec0(DecompressData data, int outSize, byte[] dataBuffer)
+        /// <summary>
+        /// 8KB 청크 단위 압축 해제 처리 메인 루틴
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="remainingOutputSize">남은 출력 데이터 크기</param>
+        /// <param name="outputBuffer">출력 데이터 버퍼</param>
+        static void ProcessDecompressionChunk(DecompressionContext context, int remainingOutputSize, byte[] outputBuffer)
         {
-            uint uVar2;
-            uint uVar3;
-            uint readCount;
+            uint decodedSymbol;
+            uint backReferenceDistance;
+            uint currentOutputPosition;
 
-            readCount = 0;
-            data.windowOffset--;
+            currentOutputPosition = 0;
+            context.windowOffset--;
 
-            while (-1 < data.windowOffset)
+            while (-1 < context.windowOffset)
             {
-                dataBuffer[readCount] = dataBuffer[data.headPosition];
-                data.headPosition = ++data.headPosition % 8192;
-                readCount++;
-                if (readCount == outSize)
+                outputBuffer[currentOutputPosition] = outputBuffer[context.windowHeadPosition];
+                context.windowHeadPosition = ++context.windowHeadPosition % 8192;
+                currentOutputPosition++;
+                if (currentOutputPosition == remainingOutputSize)
                 {
                     return;
                 }
-                data.windowOffset--;
+                context.windowOffset--;
             }
             do
             {
                 while (true)
                 {
-                    uVar2 = FUN_00404860(data);
-                    if (255 < uVar2)
+                    decodedSymbol = DecodeHuffmanSymbol(context);
+                    if (255 < decodedSymbol)
                         break;
-                    dataBuffer[readCount] = (byte)uVar2;
-                    readCount++;
-                    if (readCount == outSize)
+                    outputBuffer[currentOutputPosition] = (byte)decodedSymbol;
+                    currentOutputPosition++;
+                    if (currentOutputPosition == remainingOutputSize)
                     {
                         return;
                     }
                 }
                 // 사전에 있는 값이 기본 정의된 값(255)보다 클때
-                data.windowOffset = (short)(uVar2 - 253);
-                uVar3 = FUN_00404930(data);
-                data.headPosition = (uint)(readCount - 1 - uVar3) % 8192;
-                data.windowOffset--;
-                while (-1 < data.windowOffset)
+                context.windowOffset = (short)(decodedSymbol - 253);
+                backReferenceDistance = DecodeDistanceValue(context);
+                context.windowHeadPosition = (uint)(currentOutputPosition - 1 - backReferenceDistance) % 8192;
+                context.windowOffset--;
+                while (-1 < context.windowOffset)
                 {
-                    dataBuffer[readCount] = dataBuffer[data.headPosition];
-                    data.headPosition = ++data.headPosition % 8192;
-                    readCount++;
-                    if (readCount == outSize)
+                    outputBuffer[currentOutputPosition] = outputBuffer[context.windowHeadPosition];
+                    context.windowHeadPosition = ++context.windowHeadPosition % 8192;
+                    currentOutputPosition++;
+                    if (currentOutputPosition == remainingOutputSize)
                     {
                         return;
                     }
-                    data.windowOffset--;
+                    context.windowOffset--;
                 }
             } while (true);
         }
 
         //00404860
         /// <summary>
-        /// 디코딩 테이블 생성
+        /// 허프만 트리를 사용하여 압축된 데이터에서 심볼 디코딩
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        static uint FUN_00404860(DecompressData data)
+        /// <param name="context"></param>
+        /// <returns>디코딩된 심볼 값(0-255: 리터럴 바이트, 256+: 길이 코드)</returns>
+        static uint DecodeHuffmanSymbol(DecompressionContext context)
         {
-            ushort uVar1;
-            ushort uVar4;
-            int local_4;
+            ushort bitWindow;
+            ushort currentNode;
+            int bitMask;
 
-            if (data.flags == 0)
+            // 허프만 트리 초기화 체크
+            if (context.remainingTreeFlags == 0)
             {
-                data.flags = (ushort)OutCurrentBitProgress(data, 16);
-                FUN_00404590(data, 19, 5, 3);
-                FUN_004046e0(data);
-                FUN_00404590(data, 14, 4, -1);
+                context.remainingTreeFlags = (ushort)ExtractBitsFromBuffer(context, 16);
+                BuildHuffmanTree(context, 19, 5, 3);
+                InitializeMainHuffmanTree(context);
+                BuildHuffmanTree(context, 14, 4, -1);
             }
-            uVar1 = data.currentBitValue;
-            data.flags--;
-            uVar4 = data.dataHighTree[uVar1 >> 4];
 
-            local_4 = 8;
-            while (509 < uVar4)
+            // 비트 버퍼에서 12비트 윈도우 추출
+            bitWindow = context.currentBitBuffer;
+            context.remainingTreeFlags--;
+
+            // 허프만 트리 탐색 시작
+            currentNode = context.literalRootNodes[bitWindow >> 4];
+            bitMask = 8;
+
+            // 리프 노드 도달 시까지 트리 탐색
+            while (509 < currentNode)
             {
-                if ((uVar1 & local_4) == 0)
+                // 현재 비트 확인 (0: 좌측, 1: 우측 자식 노드)
+                if ((bitWindow & bitMask) == 0)
                 {
-                    uVar4 = data.lowTreeValue0[uVar4];
+                    currentNode = context.leftChildNodes[currentNode];
                 }
                 else
                 {
-                    uVar4 = data.lowTreeValue1[uVar4];
+                    currentNode = context.rightChildNodes[currentNode];
                 }
-                local_4 >>= 1;
+                bitMask >>= 1; // 다음 비트로 이동
             }
 
-            //=====================================테스트
-            test0[uVar4]++;
-            testValue = uVar1 >> (16 - data.dataTreeSizeTable[uVar4]);
-            if (test1[uVar4] != testValue)
-            {
-                if (test1[uVar4] != -1)
-                {
-                    Console.WriteLine("test1[{0}] changed", uVar4);
-                }
+            FillBitBuffer(context, context.literalLengthCodeSizes[currentNode]);
 
-                test1[uVar4] = testValue;
-            }
-            //===========================================
-
-            CurrentBitProgress(data, data.dataTreeSizeTable[uVar4]);
-            //=====================================테스트
-            if (data.flags == 0)
-            {
-                Console.WriteLine("---------------- flags == 0 ----------------");
-                //Console.WriteLine("------------------- test0-{0} -----------------", testCount);
-                //for (int i = 0; i < 510; i++)
-                //{
-                //    Console.WriteLine("{0}", test0[i]);
-                //}
-                //Console.WriteLine("------------------- test1 ------------------");
-                //for (int i = 0; i < 510; i++)
-                //{
-                //    if (test1[i] == -1)
-                //    {
-                //        Console.WriteLine("X");
-                //    }
-                //    else
-                //    {
-                //        Console.WriteLine("{0}", Convert.ToString(test1[i], 2));
-                //    }
-                //}
-                Console.WriteLine("--------------------------------------------");
-
-                test0 = new int[510];
-                test1 = Enumerable.Repeat(-1, 510).ToArray();
-
-                testCount++;
-            }
-            //===========================================
-
-            return uVar4;
+            return currentNode;
         }
 
         // 00404930
         /// <summary>
-        /// 반복되는 문자열의 위치로 되돌아가기 위해 테이블에서 값을 가져옴
+        /// 허프만 트리를 사용하여 역참조 거리 디코딩
         /// </summary>
-        /// <param name="data"></param>
-        /// <returns>뒤로 되돌아갈 개수</returns>
-        static uint FUN_00404930(DecompressData data)
+        /// <param name="context"></param>
+        /// <returns>역참조 거리 값</returns>
+        static uint DecodeDistanceValue(DecompressionContext context)
         {
-            ushort uVar1;
-            ushort uVar2;
-            uint uVar3;
-            int local_4;
+            ushort distanceValue;
+            ushort currentNode;
+            int bitMask;
+            int extraBits;
 
-            uVar3 = data.backLocationHighTree[data.currentBitValue >> 8];
-            if (13 < uVar3)
+            currentNode = context.distanceRootNodes[context.currentBitBuffer >> 8];
+
+            // 허프만 트리 탐색 루프 (13: 최대 허용 트리 깊이)
+            bitMask = 128;
+
+            while (currentNode > 13)
             {
-                local_4 = 128;
-                do
+                // 현재 비트 검사 (0: 좌측, 1: 우측 자식 노드)
+                if ((context.currentBitBuffer & bitMask) == 0)
                 {
-                    if ((data.currentBitValue & local_4) == 0)
-                    {
-                        uVar1 = data.lowTreeValue0[uVar3];
-                    }
-                    else
-                    {
-                        uVar1 = data.lowTreeValue1[uVar3];
-                    }
-                    uVar3 = uVar1;
-                    local_4 >>= 1;
-                } while (13 < uVar1);
+                    currentNode = context.leftChildNodes[currentNode];
+                }
+                else
+                {
+                    currentNode = context.rightChildNodes[currentNode];
+                }
+                bitMask >>= 1;
             }
-            uVar2 = 0;
-            CurrentBitProgress(data, data.backLocationTreeSizeTable[uVar3]);
-            if ((short)uVar3 != 0)
+            distanceValue = 0;
+            FillBitBuffer(context, context.distanceCodeSizes[currentNode]);
+            if (currentNode != 0)
             {
-                uVar2 = (ushort)OutCurrentBitProgress(data, (short)(uVar3 - 1));
-                uVar2 += (ushort)(1 << ((int)uVar3 - 1));
+                extraBits = currentNode - 1;
+                distanceValue = (ushort)ExtractBitsFromBuffer(context, (short)extraBits);
+                distanceValue += (ushort)(1 << extraBits);
             }
-            return uVar2;
+            return distanceValue;
         }
 
         //00404590
         /// <summary>
-        /// 허프만 알고리즘을 사용하여 한번 압축해제한다.
+        /// 허프만 트리 구성 및 코드 길이 테이블 초기화
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="param_2">test5 배열의 길이</param>
-        /// <param name="param_3">데이터 비트 수</param>
-        /// <param name="param_4">초기 비트 수</param>
-        static void FUN_00404590(DecompressData data, ushort param_2, short param_3, short param_4)
+        /// <param name="context"></param>
+        /// <param name="codeCount">처리할 코드 수</param>
+        /// <param name="bitsPerCode">코드당 비트 수</param>
+        /// <param name="initialBits">초기 비트 수</param>
+        static void BuildHuffmanTree(DecompressionContext context, ushort codeCount, short bitsPerCode, short initialBits)
         {
-            ushort uVar1;
-            short sVar2;
-            short sVar3;
-            short sVar4;
-            uint uVar5;
-            ushort uVar6;
-            int uVar7;
-            int iVar8;
-            ushort uVar10;
-            short sVar11;
+            ushort bitWindow;
+            short bitMask;
+            short validCodeCount;
+            short bitsToConsume;
+            uint codeLengthInfo;
+            int remaining;
+            int remainingCodes;
+            ushort codeLength;
+            short currentIndex;
 
-            sVar2 = param_4;
-            uVar5 = OutCurrentBitProgress(data, param_3);
-            sVar3 = (short)uVar5;
+            // 코드 길이 정보 추출
+            codeLengthInfo = ExtractBitsFromBuffer(context, bitsPerCode);
+            validCodeCount = (short)codeLengthInfo;
 
             // 해당 메소드가 2번째로 호출될 때에 OutCurrentBitProgress 메소드의 반환값이 0일 경우가 있음
             // OutCurrentBitProgress 메소드의 반환값이 0이라면
             // 뒤로 이동하는 값이 한가지 밖에 없다는 뜻
-            if (sVar3 == 0) {
+            if (validCodeCount == 0) {
                 // 뒤로 이동할 값을 받아온 후에
-                uVar5 = OutCurrentBitProgress(data, param_3);
-                // backLocationTreeSizeTable 배열은 사용할 필요가 없으니 모두 0으로 초기화
-                for (iVar8 = 0; iVar8 < param_2; iVar8++)
+                codeLengthInfo = ExtractBitsFromBuffer(context, bitsPerCode);
+                // 코드 길이 테이블 초기화
+                for (int i = 0; i < codeCount; i++)
                 {
-                    data.backLocationTreeSizeTable[iVar8] = 0;
+                    context.distanceCodeSizes[i] = 0;
                 }
                 // backLocationHighTree 배열의 값을 모두 방금 받아온 뒤로 이동할 값으로 초기화
-                for (iVar8 = 0; iVar8 < 256; iVar8++) 
+                for (int i = 0; i < 256; i++) 
                 {
-                    data.backLocationHighTree[iVar8] = (ushort)uVar5;
+                    context.distanceRootNodes[i] = (ushort)codeLengthInfo;
                 }
                 return;
             }
 
             // 가져온 횟수 만큼 데이터 가져오기
-            sVar11 = 0;
-            while (sVar11 < sVar3)
+            currentIndex = 0;
+            while (currentIndex < validCodeCount)
             {
-                uVar1 = data.currentBitValue;
+                bitWindow = context.currentBitBuffer;
                 // 맨 앞 3개의 비트만 확인
-                uVar10 = (ushort)(uVar1 >> 13);
+                codeLength = (ushort)(bitWindow >> 13);
 
                 // 입력된 비트 데이터가 00000111일때
-                if (uVar10 == 7)
+                if (codeLength == 0b111)
                 {
-                    param_4 = 4096;
+                    bitMask = 4096;
 
                     // 00010000 00000000 비트부터 0인 비트 찾기
-                    uVar6 = (ushort)(uVar1 & 4096);
-                    while (uVar6 != 0)
+                    while ((bitWindow & bitMask) != 0)
                     {
-                        param_4 >>= 1;
-                        uVar10++;
-                        uVar6 = (ushort)(param_4 & uVar1);
+                        bitMask >>= 1;
+                        if (bitMask == 0)
+                        {
+                            throw new InvalidOperationException("Invalid code length");
+                        }
+
+                        codeLength++;
                     }
 
-                    sVar4 = (short)(uVar10 - 3);
+                    bitsToConsume = (short)(codeLength - 3);
                 }
                 // 입력된 비트 데이터가 00000111가 아닐때
                 else
                 {
-                    sVar4 = 3;
+                    bitsToConsume = 3;
                 }
                 // 입력된 데이터에서 비트 수 만큼 데이터 추출
-                CurrentBitProgress(data, sVar4);
-                data.backLocationTreeSizeTable[sVar11] = (byte)uVar10;
-                sVar11++;
+                FillBitBuffer(context, bitsToConsume);
+                context.distanceCodeSizes[currentIndex] = (byte)codeLength;
+                currentIndex++;
 
-                if (sVar11 == sVar2)
+                if (currentIndex == initialBits)
                 {
-                    sVar4 = (short)OutCurrentBitProgress(data, 2);
+                    remainingCodes = (short)ExtractBitsFromBuffer(context, 2);
 
-                    iVar8 = sVar4;
-                    while (iVar8 != 0)
+                    while (remainingCodes != 0)
                     {
-                        data.backLocationTreeSizeTable[sVar11] = 0;
-                        sVar11++;
-                        iVar8--;
+                        context.distanceCodeSizes[currentIndex] = 0;
+                        currentIndex++;
+                        remainingCodes--;
                     }
                 }
             }
 
             // 만약 sVar11이 param_2보다 작을 경우, 남은 공간을 0으로 채워줍니다.
-            if (sVar11 < param_2)
+            if (currentIndex < codeCount)
             {
-                uVar7 = param_2 - sVar11;
-                for (uVar5 = 0; uVar5 < uVar7; uVar5++)
+                remaining = codeCount - currentIndex;
+                for (int i = 0; i < remaining; i++)
                 {
-                    data.backLocationTreeSizeTable[sVar11 + uVar5] = 0;
+                    context.distanceCodeSizes[currentIndex + i] = 0;
                 }
             }
             // 마지막으로 FUN_00404a00() 함수를 호출하여 decompressedDataBuffer
             // 배열을 translationTable 배열을 이용하여 원래의 데이터로 변환합니다.
-            FUN_00404a00(data, param_2, data.backLocationTreeSizeTable, 8, data.backLocationHighTree);
+            BuildDecodingTables(context, codeCount, context.distanceCodeSizes, 8, context.distanceRootNodes);
             return;
         }
 
@@ -362,122 +329,135 @@ namespace CSharpFort2ImgExtract
         /// <summary>
         /// 디코딩 테이블 업데이트
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="param_2"></param>
-        /// <param name="TreeSizeTable"></param>
-        /// <param name="param_4"></param>
-        /// <param name="HighTree"></param>
-        static void FUN_00404a00(DecompressData data, int param_2, byte[] TreeSizeTable, int param_4, ushort[] HighTree)
+        /// <param name="context"></param>
+        /// <param name="codeCount">처리할 코드 수</param>
+        /// <param name="codeLengths">코드 길이 배열</param>
+        /// <param name="maxBits">최대 비트 수</param>
+        /// <param name="rootNodes">루트 노드 배열</param>
+        static void BuildDecodingTables(DecompressionContext context, int codeCount, byte[] codeLengths, int maxBits, ushort[] rootNodes)
         {
-            int a, b;
-            ushort usVar1;
-            int iVar1, iVar2, iVar3, iVar4, iVar5;
-            int conVar2;
-            ushort[] sArray1 = new ushort[17];
-            ushort[] sArray2 = new ushort[18];
+            int cLength;
+            ushort nextCode;
+            int rootCheck, currentNodeIndex;
+            ushort maxCode;
+            int bitShift;
+            ushort[] codeRange = new ushort[17];
+            ushort[] codeValues = new ushort[18];
             // ushort* ptr;
-            ushort[] ptrArray;
-            ushort ptrPos;
+            ushort[] currentTree;
+            ushort currentPos;
 
-            for (a = 1; a < 17; a++) {
-                sArray1[a] = 0;
+            // 1. 코드 길이별 빈도수 계산
+            for (int i = 1; i < 17; i++) {
+                codeRange[i] = 0;
             }
 
-            for (a = 0; a < param_2; a++) {
-                sArray1[TreeSizeTable[a]]++;
+            for (int symbol = 0; symbol < codeCount; symbol++) {
+                codeRange[codeLengths[symbol]]++;
             }
 
-            sArray2[1] = 0;
-            for (a = 1; a <= 16; a++)
+            // 2. 코드 범위 계산
+            codeValues[1] = 0;
+            for (int i = 1; i <= 16; i++)
             {
-                usVar1 = sArray1[a];
-                usVar1 <<= (16 - a);
-                usVar1 += sArray2[a];
-                sArray2[a + 1] = usVar1;
+                nextCode = codeRange[i];
+                nextCode <<= (16 - i);
+                nextCode += codeValues[i];
+                codeValues[i + 1] = nextCode;
             }
 
-            iVar1 = param_4;
-            conVar2 = 16 - iVar1;
-            for (a = 1; a <= iVar1; a++)
+            // 3. 비트 시프트 연산 준비
+            bitShift = 16 - maxBits;
+            for (cLength = 1; cLength <= maxBits; cLength++)
             {
-                sArray2[a] >>= conVar2;
-                sArray1[a] = (ushort)(1 << (iVar1 - a));
+                codeValues[cLength] >>= bitShift;
+                codeRange[cLength] = (ushort)(1 << (maxBits - cLength));
             }
-            if (a < 17)
+
+            // 4. 남는 코드 범위 채우기
+            if (cLength < 17)
             {
-                iVar1 = 16 - a;
-                iVar2 = 17 - a;
-                for (b = 0; b < iVar2; b++)
+                int remainingBits = 16 - cLength;
+                int remainCount = 17 - cLength;
+                for (int i = 0; i < remainCount; i++)
                 {
-                    sArray1[a + b] = (ushort)(1 << iVar1);
-                    iVar1--;
+                    codeRange[cLength + i] = (ushort)(1 << remainingBits);
+                    remainingBits--;
                 }
             }
 
-            iVar1 = sArray2[param_4 + 1] >> conVar2;
-            usVar1 = (ushort)(1 << param_4);
-            if (iVar1 != 0 && iVar1 != usVar1)
+            // 5. 초기 노드 검증 및 초기화
+            rootCheck = codeValues[maxBits + 1] >> bitShift;
+            maxCode = (ushort)(1 << maxBits);
+            if (rootCheck != 0 && rootCheck != maxCode)
             {
-                usVar1 -= (ushort)iVar1;
-                for (a = 0; a < usVar1; a++)
+                ushort fillCount = (ushort)(maxCode - rootCheck);
+                for (int i = 0; i < fillCount; i++)
                 {
-                    HighTree[iVar1 + a] = 0;
+                    rootNodes[rootCheck + i] = 0;
                 }
             }
 
-            iVar5 = param_2;
-
-            for (a = 0; a < param_2; a++)
+            // 6. 디코딩 테이블 생성 메인 루프
+            currentNodeIndex = codeCount;
+            for (int symbol = 0; symbol < codeCount; symbol++)
             {
-                iVar1 = TreeSizeTable[a];
-                if (iVar1 != 0)
+                cLength = codeLengths[symbol];
+                if (cLength != 0)
                 {
-                    iVar2 = sArray2[iVar1];
-                    iVar3 = sArray1[iVar1] + iVar2;
-                    if (param_4 < iVar1)
+                    int startCode = codeValues[cLength];
+                    int endCode = codeRange[cLength] + startCode;
+
+                    // 7. 코드 길이에 따른 분기 처리
+                    if (maxBits < cLength)
                     {
                         // 이부분은 포인터를 사용하지만
                         // unsafe를 사용하기 싫어서 변수로 구현
                         // ptr = &param_5[iVar2 >> conVar2];
-                        ptrPos = (ushort)(iVar2 >> conVar2);
-                        ptrArray = HighTree;
-                        for (b = iVar1 - param_4; b != 0; b--)
+                        currentPos = (ushort)(startCode >> bitShift);
+                        currentTree = rootNodes;
+
+                        // 8. 트리 깊이 확장
+                        for (int depth = cLength - maxBits; depth != 0; depth--)
                         {
                             // if(*ptr == 0)
-                            if (ptrArray[ptrPos] == 0)
+                            if (currentTree[currentPos] == 0)
                             {
-                                data.lowTreeValue0[iVar5] = 0;
-                                data.lowTreeValue1[iVar5] = 0;
+                                context.leftChildNodes[currentNodeIndex] = 0;
+                                context.rightChildNodes[currentNodeIndex] = 0;
                                 // *ptr = (ushort)iVar5;
-                                ptrArray[ptrPos] = (ushort)iVar5;
-                                iVar5++;
+                                currentTree[currentPos] = (ushort)currentNodeIndex;
+                                currentNodeIndex++;
                             }
-                            if ((1 << (15 - param_4) & iVar2) == 0)
+
+                            // 9. 비트 패턴에 따라 트리 분기
+                            if ((1 << (15 - maxBits) & startCode) == 0)
                             {
                                 // ptr = &data.lowTreeValue0[*ptr];
-                                ptrPos = ptrArray[ptrPos];
-                                ptrArray = data.lowTreeValue0;
+                                currentPos = currentTree[currentPos];
+                                currentTree = context.leftChildNodes;
                             }
                             else
                             {
                                 // ptr = &data.lowTreeValue1[*ptr];
-                                ptrPos = ptrArray[ptrPos];
-                                ptrArray = data.lowTreeValue1;
+                                currentPos = currentTree[currentPos];
+                                currentTree = context.rightChildNodes;
                             }
-                            iVar2 *= 2;
+                            startCode *= 2;
                         }
                         // *ptr = (ushort)a;
-                        ptrArray[ptrPos] = (ushort)a;
+                        currentTree[currentPos] = (ushort)symbol;
                     }
-                    else if (iVar2 < iVar3)
+                    else if (startCode < endCode)
                     {
-                        iVar4 = iVar3 - iVar2;
-                        for (b = 0; b < iVar4; b++)
+                        // 10. 직접 코드 할당
+                        int rangeSize = endCode - startCode;
+                        for (int i = 0; i < rangeSize; i++)
                         {
-                            HighTree[iVar2 + b] = (ushort)a;
+                            rootNodes[startCode + i] = (ushort)symbol;
                         }
                     }
-                    sArray2[iVar1] = (ushort)iVar3;
+                    codeValues[cLength] = (ushort)endCode;
                 }
             }
             return;
@@ -486,91 +466,109 @@ namespace CSharpFort2ImgExtract
 
 
         // 004046e0
-        static void FUN_004046e0(DecompressData data)
+        /// <summary>
+        /// 메인 허프만 트리 초기화 및 코드 길이 테이블 구성
+        /// </summary>
+        /// <param name="context"></param>
+        static void InitializeMainHuffmanTree(DecompressionContext context)
         {
-            short sVar1;
-            ushort uVar2;
-            int iVar3;
-            int uVar5;
-            ushort uVar6;
-            short sVar7;
-            short sVar8;
-            int local_4;
+            short repeatCount;
+            ushort codeLengthInfo;
+            ushort currentNode;
+            short validCodeCount;
+            short currentIndex;
+            int bitMask;
 
-            uVar2 = OutCurrentBitProgress(data, 9);
-            sVar7 = (short)uVar2;
-            if (sVar7 != 0)
+            // 9비트로 유효 코드 수 추출
+            codeLengthInfo = ExtractBitsFromBuffer(context, 9);
+            validCodeCount = (short)codeLengthInfo;
+
+            if (validCodeCount != 0)
             {
-                sVar8 = 0;
-                while (sVar8 < sVar7)
+                currentIndex = 0;
+                while (currentIndex < validCodeCount)
                 {
-                    uVar6 = data.backLocationHighTree[data.currentBitValue >> 8];
-                    local_4 = 128;
-                    while (18 < uVar6)
+                    // 허프만 트리 탐색 시작
+                    currentNode = context.distanceRootNodes[context.currentBitBuffer >> 8];
+                    bitMask = 128;
+
+                    // 트리 리프 노드 탐색 루프
+                    while (18 < currentNode)
                     {
-                        if ((local_4 & data.currentBitValue) == 0)
+                        if ((bitMask & context.currentBitBuffer) == 0)
                         {
-                            uVar6 = data.lowTreeValue0[uVar6];
+                            currentNode = context.leftChildNodes[currentNode];
                         }
                         else
                         {
-                            uVar6 = data.lowTreeValue1[uVar6];
+                            currentNode = context.rightChildNodes[currentNode];
                         }
-                        local_4 >>= 1;
+                        bitMask >>= 1;
                     }
-                    CurrentBitProgress(data, data.backLocationTreeSizeTable[uVar6]);
-                    if ((short)uVar6 < 3)
+
+                    // 코드 길이 정보 갱신
+                    FillBitBuffer(context, context.distanceCodeSizes[currentNode]);
+
+                    // 특수 코드 처리 (0-2)
+                    if ((short)currentNode < 3)
                     {
-                        if (uVar6 == 0)
+                        if (currentNode == 0)
                         {
-                            sVar1 = 1;
+                            repeatCount = 1;
                         }
-                        else if (uVar6 == 1)
+                        else if (currentNode == 1)
                         {
-                            uVar2 = OutCurrentBitProgress(data, 4);
-                            sVar1 = (short)(uVar2 + 3);
+                            codeLengthInfo = ExtractBitsFromBuffer(context, 4);
+                            repeatCount = (short)(codeLengthInfo + 3);
                         }
                         else
                         {
-                            uVar2 = OutCurrentBitProgress(data, 9);
-                            sVar1 = (short)(uVar2 + 20);
+                            codeLengthInfo = ExtractBitsFromBuffer(context, 9);
+                            repeatCount = (short)(codeLengthInfo + 20);
                         }
 
-                        iVar3 = sVar1;
-                        while (0 < iVar3)
+                        // 반복 패턴 처리
+                        while (0 < repeatCount)
                         {
-                            data.dataTreeSizeTable[sVar8] = 0;
-                            iVar3--;
-                            sVar8++;
+                            context.literalLengthCodeSizes[currentIndex] = 0;
+                            repeatCount--;
+                            currentIndex++;
                         }
                     }
                     else
                     {
-                        data.dataTreeSizeTable[sVar8] = (byte)(uVar6 - 2);
-                        sVar8++;
+                        // 일반 코드 길이 저장
+                        context.literalLengthCodeSizes[currentIndex] = (byte)(currentNode - 2);
+                        currentIndex++;
                     }
                 }
 
-                if (sVar8 < 510)
+                // 남는 공간 제로 패딩
+                if (currentIndex < 510)
                 {
-                    uVar5 = 510 - sVar8;
-                    for (uVar2 = 0; uVar2 < uVar5; uVar2++)
+                    int remaining = 510 - currentIndex;
+                    for (int i = 0; i < remaining; i++)
                     {
-                        data.dataTreeSizeTable[sVar8 + uVar2] = 0;
+                        context.literalLengthCodeSizes[currentIndex + i] = 0;
                     }
                 }
-                FUN_00404a00(data, 510, data.dataTreeSizeTable, 12, data.dataHighTree);
+
+                // 디코딩 테이블 생성
+                BuildDecodingTables(context, 510, context.literalLengthCodeSizes, 12, context.literalRootNodes);
                 return;
             }
-            uVar2 = OutCurrentBitProgress(data, 9);
-            for (iVar3 = 0; iVar3 < 510; iVar3++)
+
+            // 단일 코드 길이 특수 처리
+            codeLengthInfo = ExtractBitsFromBuffer(context, 9);
+            for (int i = 0; i < 510; i++)
             {
-                data.dataTreeSizeTable[iVar3] = 0;
+                context.literalLengthCodeSizes[i] = 0;
             }
 
-            for (iVar3 = 0; iVar3 < 4096; iVar3++)
+            // 전체 트리 노드 동일 값 설정
+            for (int i = 0; i < 4096; i++)
             {
-                data.dataHighTree[iVar3] = (ushort)uVar2;
+                context.literalRootNodes[i] = (ushort)codeLengthInfo;
             }
             return;
         }
@@ -579,62 +577,62 @@ namespace CSharpFort2ImgExtract
         /// <summary>
         /// 압축 데이터에서 다음 N 비트를 읽어와 반환합니다.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="numberReadBits">읽어올 비트 수</param>
+        /// <param name="context"></param>
+        /// <param name="numberExtractBits">읽어올 비트 수</param>
         /// <returns>읽어온 비트 값을 ushort 타입으로 반환</returns>
-        static ushort OutCurrentBitProgress(DecompressData data, short numberReadBits)
+        static ushort ExtractBitsFromBuffer(DecompressionContext context, short numberExtractBits)
         {
-            ushort sVar1;
+            ushort value;
 
             // uShort0은 현재 읽어온 비트 값이 들어있는 변수입니다.
             // FUN_00402c00 함수를 호출해 uShort0에서 param_2 비트를 제외한 나머지 비트를 제거합니다.
-            sVar1 = (ushort)data.currentBitValue;
+            value = (ushort)context.currentBitBuffer;
             // sVar1에 현재 읽어온 비트 값 중 다음 N 비트를 할당합니다.
-            sVar1 >>= (ushort)(16 - numberReadBits);
+            value >>= (ushort)(16 - numberExtractBits);
             // 다음 비트를 읽기 위해 FUN_00402c00 함수를 호출합니다.
-            CurrentBitProgress(data, numberReadBits);
-            return sVar1;
+            FillBitBuffer(context, numberExtractBits);
+            return value;
         }
 
         // 00402C00
         /// <summary>
         /// 압축 데이터의 비트를 읽어와서 DecompressData 클래스에 저장하는 역할을 합니다.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="numberReadBits">읽어올 비트 수</param>
-        static void CurrentBitProgress(DecompressData data, short numberReadBits)
+        /// <param name="context"></param>
+        /// <param name="numberExtractBits">읽어올 비트 수</param>
+        static void FillBitBuffer(DecompressionContext context, short numberExtractBits)
         {
-            data.currentBitValue <<= numberReadBits;
-            if (data.remainingBits < numberReadBits)
+            context.currentBitBuffer <<= numberExtractBits;
+            if (context.availableBits < numberExtractBits)
             {
                 do
                 {
-                    numberReadBits -= data.remainingBits;
-                    data.currentBitValue |= (ushort)(data.nextBitValue << numberReadBits);
-                    if (data.remainReadData == 0)
+                    numberExtractBits -= context.availableBits;
+                    context.currentBitBuffer |= (ushort)(context.nextBitValue << numberExtractBits);
+                    if (context.remainReadData == 0)
                     {
-                        data.nextBitValue = 0;
+                        context.nextBitValue = 0;
                     }
                     else
                     {
-                        data.remainReadData--;
-                        data.nextBitValue = data.readMem[data.index];
-                        data.index++;
+                        context.remainReadData--;
+                        context.nextBitValue = context.compressedData[context.currentInputPosition];
+                        context.currentInputPosition++;
                     }
-                    data.remainingBits = 8;
-                } while (8 < numberReadBits);
+                    context.availableBits = 8;
+                } while (8 < numberExtractBits);
             }
-            data.remainingBits -= numberReadBits;
-            data.currentBitValue |= (ushort)(data.nextBitValue >> data.remainingBits);
+            context.availableBits -= numberExtractBits;
+            context.currentBitBuffer |= (ushort)(context.nextBitValue >> context.availableBits);
             return;
         }
 
         // 00402E20
-        static void OutMemoryCopy(DecompressData data, byte[] inMem, int size)
+        static void OutMemoryCopy(DecompressionContext context, byte[] inMem, int size)
         {
-            Array.Copy(inMem, 0, data.outMem, data.outMemWriteOffset, size);
+            Array.Copy(inMem, 0, context.decompressedOutput, context.outMemWriteOffset, size);
 
-            data.outMemWriteOffset += size;
+            context.outMemWriteOffset += size;
             return;
         }
     }

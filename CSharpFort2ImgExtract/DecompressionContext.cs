@@ -6,58 +6,60 @@ using System.Threading.Tasks;
 
 namespace CSharpFort2ImgExtract
 {
-    public class DecompressData
+    public class DecompressionContext
     {
-        public byte[] readMem;
-        public int outSize;
-        public int index;
-        public int readSize;
+        public byte[] compressedData;
+        public int remainingDecompressedSize;
+        public int currentInputPosition;
+        public int totalCompressedSize;
         public int outMemWriteOffset;
-        public byte[] outMem;
+        public byte[] decompressedOutput;
         public int remainReadData;
 
-        public ushort currentBitValue;
+        public ushort currentBitBuffer;
         public ushort nextBitValue;
-        public short remainingBits;
-        public ushort flags;
+        public short availableBits;
+        public ushort remainingTreeFlags;
         public short windowOffset;
 
+        // 허프만 트리 구조
         /// <summary>
         /// ushort[256]
         /// 뒤로 이동할 값
         /// </summary>
-        public ushort[] backLocationHighTree = new ushort[256];
+        public ushort[] distanceRootNodes = new ushort[256];
         /// <summary>
         /// ushort[1019]
         /// </summary>
-        public ushort[] lowTreeValue0 = new ushort[1019];
+        public ushort[] leftChildNodes = new ushort[1019];
         /// <summary>
         /// ushort[4096]
         /// InMem에 들어가는 데이터가 있는 트리 배열
         /// </summary>
-        public ushort[] dataHighTree = new ushort[4096];
+        public ushort[] literalRootNodes = new ushort[4096];
         /// <summary>
         /// ushort[1021]
         /// </summary>
-        public ushort[] lowTreeValue1 = new ushort[1021];
+        public ushort[] rightChildNodes = new ushort[1021];
+        // 코드 길이 테이블
         /// <summary>
         /// byte[510]
         ///  데이터가 있는 트리 사이즈
         /// </summary>
-        public byte[] dataTreeSizeTable = new byte[510];
+        public byte[] literalLengthCodeSizes = new byte[510];
         /// <summary>
         /// byte[19]
         /// 뒤로 이동할 값의 트리 사이즈
         /// </summary>
-        public byte[] backLocationTreeSizeTable = new byte[19];
+        public byte[] distanceCodeSizes = new byte[19];
         /// <summary>
         /// byte[8192]
         /// </summary>
-        public byte[] dataBuffer = new byte[8192];
+        public byte[] slidingWindowBuffer = new byte[8192];
 
         /// <summary>
         /// DAT_0044f82c
         /// </summary>
-        public uint headPosition = 0;
+        public uint windowHeadPosition = 0;
     }
 }
